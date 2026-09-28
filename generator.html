@@ -1,39 +1,129 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#1f7a3d">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Samridhis Payment Generator</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f2f7f3;font-family:Arial;color:#17351f}.wrap{max-width:520px;margin:auto;padding:16px}
-.card{background:#fff;border-radius:20px;padding:22px;box-shadow:0 4px 22px #0001}h1{text-align:center;margin:0;font-size:25px}.sub{text-align:center;color:#68746c;margin:6px 0 22px}
-label{display:block;font-weight:700;margin:14px 0 6px}input{width:100%;padding:15px;border:1px solid #ccd7cf;border-radius:11px;font-size:18px}
-button{width:100%;padding:15px;border:0;border-radius:11px;margin-top:11px;font-size:17px;font-weight:700}.generate{background:#1f7a3d;color:#fff}.share{background:#25d366;color:#fff}.copy{background:#eef3ef;color:#17351f}.clear{background:#eee;color:#17351f}
-#result{display:none;margin-top:20px}.box{background:#f4f8f4;border-radius:12px;padding:14px;word-break:break-all}.amount{text-align:center;font-size:30px;font-weight:800;margin:8px}
-.note{text-align:center;font-size:13px;color:#68746c;line-height:1.5;margin-top:14px}
-</style></head><body><div class="wrap"><div class="card">
-<h1>SAMRIDHIS GARDEN STORE</h1><div class="sub">WhatsApp Payment Generator</div>
-<label>UPI ID</label><input id="upi" type="text" placeholder="example@upi">
-<button class="copy" onclick="saveUpi()">💾 Save UPI ID</button>
-<label>Customer name</label><input id="name" placeholder="e.g. Adi">
-<label>Order amount (₹)</label><input id="amount" type="number" min="1" step="0.01" inputmode="decimal" placeholder="e.g. 501">
-<button class="generate" onclick="generate()">Generate Payment</button>
-<div id="result"><div class="amount" id="showAmount"></div><div class="box" id="linkBox"></div>
-<button class="copy" onclick="copyLink()">📋 Copy Payment Link</button>
-<button class="share" onclick="shareWhatsApp()">📤 Share Payment Link on WhatsApp</button>
-<div class="note">The customer receives a normal HTTPS link. The payment page uses the selected UPI ID for both the PAY NOW button and QR code.</div>
-</div></div></div>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f7f3;color:#17351f}
+.wrap{max-width:620px;margin:auto;padding:20px}
+.card{background:#fff;border-radius:20px;padding:24px;box-shadow:0 5px 25px #0001;text-align:center}
+h1{margin:0 0 6px;font-size:26px}
+.sub{margin:0 0 22px;color:#637168}
+label{display:block;text-align:left;font-weight:700;margin:14px 0 6px}
+input{width:100%;padding:14px;border:1px solid #ccd6ce;border-radius:10px;font-size:18px}
+button{width:100%;padding:14px;border:0;border-radius:10px;font-size:17px;font-weight:700;cursor:pointer;margin-top:12px}
+.save{background:#eef4ef;color:#17351f}
+.gen{background:#1f7a3d;color:#fff}
+.wa{background:#25d366;color:#fff}
+#result{display:none;margin-top:22px}
+.amount{font-size:28px;font-weight:800;margin:8px}
+.linkbox{background:#f1f5f2;border-radius:12px;padding:14px;text-align:left;word-break:break-all;font-size:14px;color:#304438;margin-top:16px}
+.small{font-size:14px;color:#69766d;margin-top:10px}
+.error{color:#b42318;font-size:14px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1>SAMRIDHIS GARDEN STORE</h1>
+<p class="sub">WhatsApp Payment Generator</p>
+
+<label for="upi">UPI ID</label>
+<input id="upi" placeholder="e.g. Psrdhar@okicici">
+
+<label for="payee">Payee / Bank Registered Name</label>
+<input id="payee" placeholder="e.g. PEESAPATY SRIDHAR">
+
+<button class="save" onclick="saveDetails()">💾 Save UPI Details</button>
+
+<label for="customer">Customer name</label>
+<input id="customer" placeholder="e.g. Aditya">
+
+<label for="amount">Order amount (₹)</label>
+<input id="amount" type="number" min="0.01" step="0.01" placeholder="Enter amount">
+
+<div id="err" class="error">Please enter a valid amount, UPI ID and payee name.</div>
+<button class="gen" onclick="generatePayment()">Generate Payment</button>
+
+<div id="result">
+<div class="amount" id="showAmount"></div>
+<div class="linkbox" id="linkBox"></div>
+<button onclick="copyLink()">📋 Copy Payment Link</button>
+<button class="wa" onclick="shareWhatsApp()">📤 Share Payment Link on WhatsApp</button>
+<div class="small">The customer receives a normal HTTPS link. The payment page uses the selected UPI ID and bank-registered payee name.</div>
+</div>
+</div>
+</div>
+
 <script>
-const BASE="https://samridhisgarden.github.io/samridhis-payment/";
 const DEFAULT_UPI="Psrdhar@okicici";
-let paymentLink="",customer="",amount=0,upi="";
-document.getElementById("upi").value=localStorage.getItem("samridhis_upi")||DEFAULT_UPI;
-function saveUpi(){const v=document.getElementById("upi").value.trim();if(!v||!v.includes("@")){alert("Enter a valid UPI ID, for example name@bank");return}localStorage.setItem("samridhis_upi",v);alert("UPI ID saved.");}
-function generate(){
- upi=document.getElementById("upi").value.trim()||DEFAULT_UPI;customer=document.getElementById("name").value.trim();amount=parseFloat(document.getElementById("amount").value);
- if(!upi.includes("@")){alert("Please enter a valid UPI ID.");return}
- if(!amount||amount<=0){alert("Please enter a valid amount.");return}
- paymentLink=BASE+"?amount="+encodeURIComponent(amount.toFixed(2))+"&customer="+encodeURIComponent(customer)+"&upi="+encodeURIComponent(upi);
- document.getElementById("showAmount").textContent="Order Total: ₹"+amount.toFixed(2);
- document.getElementById("linkBox").textContent=paymentLink;document.getElementById("result").style.display="block";
+const DEFAULT_PAYEE="PEESAPATY SRIDHAR";
+const BASE_URL="https://samridhisgarden.github.io/samridhis-payment/";
+
+function loadDetails(){
+  const upi=localStorage.getItem("samridhis_upi")||DEFAULT_UPI;
+  const payee=localStorage.getItem("samridhis_payee")||DEFAULT_PAYEE;
+  document.getElementById("upi").value=upi;
+  document.getElementById("payee").value=payee;
 }
-async function copyLink(){try{await navigator.clipboard.writeText(paymentLink);alert("Payment link copied.");}catch(e){prompt("Copy payment link:",paymentLink)}}
-function shareWhatsApp(){const msg="Hello"+(customer?" "+customer:"")+",%0A%0AYour Samridhis Garden Store order total is ₹"+amount.toFixed(2)+".%0A%0A💳 PAY ₹"+amount.toFixed(2)+" NOW:%0A"+encodeURIComponent(paymentLink)+"%0A%0A📱 The payment page also contains a QR code.%0A%0AUPI: "+encodeURIComponent(upi)+"%0A%0AThank you for shopping with Samridhis Garden Store.";window.location.href="https://wa.me/?text="+msg;}
-</script></body></html>
+
+function saveDetails(){
+  const upi=document.getElementById("upi").value.trim();
+  const payee=document.getElementById("payee").value.trim();
+  if(!upi||!payee){alert("Please enter both UPI ID and payee name.");return;}
+  localStorage.setItem("samridhis_upi",upi);
+  localStorage.setItem("samridhis_payee",payee);
+  alert("UPI details saved.");
+}
+
+function generatePayment(){
+  const upi=document.getElementById("upi").value.trim();
+  const payee=document.getElementById("payee").value.trim();
+  const customer=document.getElementById("customer").value.trim();
+  const amount=parseFloat(document.getElementById("amount").value);
+  const err=document.getElementById("err");
+
+  if(!upi||!payee||!amount||amount<=0){
+    err.style.display="block";
+    return;
+  }
+  err.style.display="none";
+
+  localStorage.setItem("samridhis_upi",upi);
+  localStorage.setItem("samridhis_payee",payee);
+
+  const url=BASE_URL+"?amount="+encodeURIComponent(amount.toFixed(2))
+    +"&customer="+encodeURIComponent(customer)
+    +"&upi="+encodeURIComponent(upi)
+    +"&payee="+encodeURIComponent(payee);
+
+  document.getElementById("showAmount").textContent="Order Total: ₹"+amount.toFixed(2);
+  document.getElementById("linkBox").textContent=url;
+  document.getElementById("result").style.display="block";
+}
+
+async function copyLink(){
+  const link=document.getElementById("linkBox").textContent;
+  try{
+    await navigator.clipboard.writeText(link);
+    alert("Payment link copied.");
+  }catch(e){
+    alert("Please long-press the link and copy it.");
+  }
+}
+
+function shareWhatsApp(){
+  const link=document.getElementById("linkBox").textContent;
+  const customer=document.getElementById("customer").value.trim();
+  const amount=parseFloat(document.getElementById("amount").value);
+  if(!link)return;
+  const msg="Hello"+(customer?" "+customer:"")+",\n\nYour Samridhis Garden Store order total is ₹"+amount.toFixed(2)+".\n\nPlease use the secure payment link below:\n"+link+"\n\nThank you for shopping with Samridhis Garden Store.";
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+
+loadDetails();
+</script>
+</body>
+</html>

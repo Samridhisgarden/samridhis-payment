@@ -14,6 +14,8 @@ h1{font-size:25px;margin:0 0 6px}
 .amount{font-size:34px;font-weight:800;margin:15px 0}
 .pay{display:block;background:#1f7a3d;color:#fff;text-decoration:none;padding:16px;border-radius:12px;font-size:19px;font-weight:800}
 #qr{width:280px;height:280px;margin:20px auto 5px;border:8px solid white;max-width:100%}
+.choose{font-size:15px;font-weight:700;margin:4px 0 10px;color:#34463a}
+.pay.secondary{background:#e9f1eb;color:#1f7a3d;margin-top:9px}
 .upi{font-size:14px;color:#68746c}
 .payee{font-size:14px;color:#68746c;margin-top:6px}
 .note{font-size:13px;color:#68746c;line-height:1.5;margin-top:18px}
@@ -52,14 +54,35 @@ if(!amount || amount<=0){
     +"&am="+amount.toFixed(2)
     +"&cu=INR";
 
+  // Android app-specific UPI intents. These are only used for the Pay Now buttons;
+  // the QR code continues to use the standard UPI URI above.
+  const googlePayIntent = "intent://pay?pa="+encodeURIComponent(upi)
+    +"&pn="+encodeURIComponent(payee)
+    +"&am="+amount.toFixed(2)
+    +"&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end";
+
+  const phonePeIntent = "intent://pay?pa="+encodeURIComponent(upi)
+    +"&pn="+encodeURIComponent(payee)
+    +"&am="+amount.toFixed(2)
+    +"&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end";
+
+  const paytmIntent = "intent://pay?pa="+encodeURIComponent(upi)
+    +"&pn="+encodeURIComponent(payee)
+    +"&am="+amount.toFixed(2)
+    +"&cu=INR#Intent;scheme=upi;package=net.one97.paytm;end";
+
   document.getElementById("content").innerHTML=
     '<div>Order for '+escapeHtml(customer)+'</div>'+
     '<div class="amount">₹'+amount.toFixed(2)+'</div>'+
-    '<a class="pay" href="'+uri+'">💳 Pay ₹'+amount.toFixed(2)+' Now</a>'+
+    '<div class="choose">Choose your UPI app</div>'+
+    '<a class="pay" href="'+googlePayIntent+'">🟢 Pay with Google Pay</a>'+
+    '<a class="pay secondary" href="'+phonePeIntent+'">🔵 Pay with PhonePe</a>'+
+    '<a class="pay secondary" href="'+paytmIntent+'">🟣 Pay with Paytm</a>'+
+    '<a class="pay secondary" href="'+uri+'">📱 Pay with any UPI app</a>'+
     '<canvas id="qr"></canvas>'+
     '<div class="upi">UPI: '+escapeHtml(upi)+'</div>'+
-    '<div class="payee">Payee: '+escapeHtml(payee)+'</div>'+
-    '<div class="note">Tap the button to open a compatible UPI app, or scan the QR code with another phone.</div>';
+    '<div class="payee">Beneficiary: '+escapeHtml(payee)+'</div>'+
+    '<div class="note">If an app-specific button does not open, use “Pay with any UPI app” or scan the QR code.</div>';
 
   new QRious({
     element:document.getElementById("qr"),
